@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import os
+import time
+import requests
 from dotenv import load_dotenv
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
@@ -101,10 +104,81 @@ def send_pdf_message(to_number: str, message: str, pdf_path: str) -> str:
     if not os.path.isfile(path):
         raise FileNotFoundError(f"PDF file not found: {path}")
 
-    # Manual-share flow: send text only, BDA shares the downloaded PDF manually.
-    manual_share_message = (
-        "Hi there, thanks for your time on the call today! I've put together answers to the questions you raised.\n\n"
-        "📄 Your personalized PDF is ready - your Scaler advisor will share it with you shortly.\n\n"
-        "Let me know if you'd like to chat more!"
+    body = (message or "").strip()
+    if not body:
+        raise ValueError("Message body is empty.")
+
+    public_url = upload_pdf_to_github(path)
+    _wait_until_public_pdf_url(public_url)
+    from_id = _get_whatsapp_from()
+    to_id = format_whatsapp_number(to_number)
+    client = _get_client()
+    try:
+        msg = client.messages.create(
+            from_=from_id,
+            to=to_id,
+            body=body,
+            media_url=[public_url],
+        )
+        return str(msg.sid)
+    except TwilioRestException:
+        # Fallback: deliver a text with the public link if media attach fails.
+        fallback_body = f"{body}\n\nPDF: {public_url}"
+        return send_text_message(to_number, fallback_body)
+
+
+def upload_pdf_to_github(pdf_path: str) -> str:
+    """Upload PDF to GitHub repo and return raw public URL."""
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    repo = os.environ.get("GITHUB_REPO", "").strip()  # format: username/repo-name
+    if not token or not repo:
+        raise RuntimeError("GITHUB_TOKEN or GITHUB_REPO not set")
+
+    filename = os.path.basename(pdf_path)
+    api_url = f"https://api.github.com/repos/{repo}/contents/pdfs/{filename}"
+    with open(pdf_path, "rb") as f:
+        content = base64.b64encode(f.read()).decode("utf-8")
+
+    response = requests.put(
+        api_url,
+        headers={
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        },
+        json={
+            "message": f"Add PDF {filename}",
+            "content": content,
+        },
+        timeout=30,
     )
-    return send_text_message(to_number, manual_share_message)
+
+    if response.status_code in (200, 201):
+        payload = response.json()
+        content_obj = payload.get("content", {}) if isinstance(payload, dict) else {}
+        download_url = str(content_obj.get("download_url", "")).strip()
+        if download_url:
+            return download_url
+        return f"https://raw.githubusercontent.com/{repo}/main/pdfs/{filename}"
+    raise RuntimeError(f"GitHub upload failed: HTTP {response.status_code}: {response.text[:300]}")
+
+
+def _wait_until_public_pdf_url(url: str, *, max_attempts: int = 6) -> None:
+    """
+    Ensure Twilio can fetch the PDF from a public URL before media send.
+    """
+    last_status: int | None = None
+    last_ct: str = ""
+    for attempt in range(1, max_attempts + 1):
+        try:
+            r = requests.get(url, timeout=10)
+            last_status = r.status_code
+            last_ct = (r.headers.get("content-type") or "").lower()
+            if r.status_code == 200 and ("pdf" in last_ct or url.lower().endswith(".pdf")):
+                return
+        except requests.RequestException:
+            pass
+        time.sleep(min(6, 0.8 * attempt))
+    raise RuntimeError(
+        f"Uploaded PDF URL is not publicly reachable for Twilio (status={last_status}, content-type={last_ct!r}). "
+        "Ensure GITHUB_REPO is public and try again."
+    )

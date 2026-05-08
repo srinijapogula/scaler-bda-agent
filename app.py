@@ -662,11 +662,11 @@ def main() -> None:
                     if not pdf_path:
                         raise ValueError("PDF path missing. Regenerate the PDF and try again.")
                     sid = send_pdf_message(lead_wa, cover, str(pdf_path))
-                    st.session_state["post_status_message"] = f"WhatsApp message sent! SID `{sid}`"
+                    st.session_state["post_status_message"] = f"WhatsApp sent with hosted PDF link. SID `{sid}`"
                     st.session_state["post_last_twilio_sid"] = sid
                     st.session_state["post_awaiting_approval"] = False
-                    st.session_state["post_manual_share_ready"] = True
-                    st.success("WhatsApp message sent!")
+                    st.session_state["post_manual_share_ready"] = False
+                    st.success("WhatsApp sent with hosted PDF link.")
                 except Exception as e:
                     st.error(str(e))
                     with st.expander("Error details"):
