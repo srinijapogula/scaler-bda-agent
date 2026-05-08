@@ -6,6 +6,7 @@ import os
 import re
 
 from dotenv import load_dotenv
+import requests
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
@@ -158,11 +159,34 @@ def send_whatsapp_text(*, to_number: str, body: str) -> str:
     return send_text_message(to_number, body)
 
 
+def upload_pdf_to_public_url(pdf_path: str) -> str:
+    """Upload a local PDF to file.io and return a public URL."""
+    path = (pdf_path or "").strip()
+    if not path:
+        raise ValueError("pdf_path is empty.")
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"PDF file not found: {path}")
+
+    with open(path, "rb") as f:
+        response = requests.post(
+            "https://file.io",
+            files={"file": (os.path.basename(path), f, "application/pdf")},
+            data={"expires": "1d"},
+            timeout=30,
+        )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get("success") and data.get("link"):
+            return str(data["link"]).strip()
+    raise RuntimeError("Failed to upload PDF to public URL")
+
+
 def send_whatsapp_with_optional_pdf(
     *,
     to_number: str,
     body: str,
     pdf_url: str | None = None,
+    pdf_path: str | None = None,
     pdf_bytes: bytes | None = None,
 ) -> dict:
     """
@@ -180,8 +204,18 @@ def send_whatsapp_with_optional_pdf(
     if not body:
         raise ValueError("Message body is empty.")
 
-    media_url = (pdf_url or "").strip() or None
+    media_url = None
     note: str | None = None
+
+    # Prefer file.io upload so Twilio always gets a public HTTPS URL.
+    if pdf_path:
+        try:
+            media_url = upload_pdf_to_public_url(pdf_path)
+        except Exception:
+            media_url = None
+
+    if not media_url:
+        media_url = (pdf_url or "").strip() or None
 
     if not media_url and pdf_bytes:
         media_dir = os.environ.get("TWILIO_PUBLIC_MEDIA_PATH", "public_media").strip() or "public_media"

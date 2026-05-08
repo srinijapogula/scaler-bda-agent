@@ -21,7 +21,7 @@ from agents.pdf_content_generator import generate_pdf_content
 from agents.transcript_extractor import extract_transcript_insights
 from utils.pdf_renderer import render_pdf, static_pdf_url
 from utils.scaler_data import get_facts_block, persona_ui_label_to_slug, template_for_persona_slug
-from utils.whatsapp import send_pdf_message, send_text_message, send_whatsapp_with_optional_pdf, test_twilio_auth
+from utils.whatsapp import send_text_message, send_whatsapp_with_optional_pdf, test_twilio_auth
 
 load_dotenv(override=True)
 
@@ -659,26 +659,24 @@ def main() -> None:
                     fname = Path(pdf_path).name if pdf_path else None
                     pdf_url = static_pdf_url(fname) if fname else None
                     st.session_state["post_pdf_attachment_missed"] = False
-                    if pdf_url:
-                        sid = send_pdf_message(lead_wa, cover, pdf_url)
-                        st.session_state["post_status_message"] = f"WhatsApp sent with PDF attachment. SID `{sid}`"
-                    else:
-                        result = send_whatsapp_with_optional_pdf(
-                            to_number=lead_wa,
-                            body=cover,
-                            pdf_bytes=st.session_state.get("post_pdf_bytes"),
+                    result = send_whatsapp_with_optional_pdf(
+                        to_number=lead_wa,
+                        body=cover,
+                        pdf_url=pdf_url,
+                        pdf_path=pdf_path,
+                        pdf_bytes=st.session_state.get("post_pdf_bytes"),
+                    )
+                    sid = result["sid"]
+                    had_pdf = bool(result.get("had_attachment"))
+                    st.session_state["post_pdf_attachment_missed"] = not had_pdf
+                    if had_pdf:
+                        st.session_state["post_status_message"] = (
+                            f"WhatsApp sent with PDF. SID `{sid}`"
                         )
-                        sid = result["sid"]
-                        had_pdf = bool(result.get("had_attachment"))
-                        st.session_state["post_pdf_attachment_missed"] = not had_pdf
-                        if had_pdf:
-                            st.session_state["post_status_message"] = (
-                                f"WhatsApp sent with PDF. SID `{sid}`"
-                            )
-                        else:
-                            st.session_state["post_status_message"] = (
-                                f"WhatsApp sent (covering text only; PDF not attached). SID `{sid}`"
-                            )
+                    else:
+                        st.session_state["post_status_message"] = (
+                            f"WhatsApp sent (covering text only; PDF not attached). SID `{sid}`"
+                        )
                     st.session_state["post_last_twilio_sid"] = sid
                     st.session_state["post_awaiting_approval"] = False
                     if st.session_state.get("post_pdf_attachment_missed"):
