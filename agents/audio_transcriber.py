@@ -49,6 +49,12 @@ def _transcribe_file_object(
             kwargs["language"] = language
         result = client.audio.transcriptions.create(**kwargs)
     except (APIConnectionError, OpenAIRateLimitError, APIError) as e:
+        msg = str(e)
+        if "insufficient_quota" in msg or "You exceeded your current quota" in msg:
+            raise RuntimeError(
+                "OpenAI Whisper quota exceeded (insufficient_quota). "
+                "Add billing/credits for your OpenAI project, or paste a text transcript instead of audio."
+            ) from e
         raise RuntimeError(f"OpenAI Whisper API error: {e}") from e
 
     text = (getattr(result, "text", None) or "").strip()

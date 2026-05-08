@@ -495,10 +495,19 @@ def main() -> None:
                         upload = st.session_state.get("post_audio")
                         if upload is None:
                             raise ValueError("Upload an audio file or switch to transcript.")
-                        transcript_text = transcribe_audio(
-                            audio_file=io.BytesIO(upload.getvalue()),
-                            filename=upload.name or "audio.mp3",
-                        )
+                        try:
+                            transcript_text = transcribe_audio(
+                                audio_file=io.BytesIO(upload.getvalue()),
+                                filename=upload.name or "audio.mp3",
+                            )
+                        except RuntimeError as e:
+                            if "insufficient_quota" in str(e) or "quota" in str(e).lower():
+                                st.session_state["post_input_mode"] = "Text Transcript"
+                                raise ValueError(
+                                    "Whisper transcription failed due to OpenAI quota/billing. "
+                                    "Switching to Text Transcript — please paste the transcript and try again."
+                                ) from e
+                            raise
                     else:
                         transcript_text = (st.session_state.get("post_transcript") or "").strip()
                         if not transcript_text:
