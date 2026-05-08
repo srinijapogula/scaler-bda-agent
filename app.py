@@ -501,9 +501,18 @@ def main() -> None:
                         upload = st.session_state.get("post_audio")
                         if upload is None:
                             raise ValueError("Upload an audio file or switch to transcript.")
+                        getvalue_fn = getattr(upload, "getvalue", None)
+                        if not callable(getvalue_fn):
+                            raise ValueError(
+                                "Audio file is no longer available (it may have been removed). "
+                                "Please upload again or switch to transcript."
+                            )
+                        audio_bytes = getvalue_fn()
+                        if not audio_bytes:
+                            raise ValueError("Uploaded audio appears empty. Please upload a valid file.")
                         try:
                             transcript_text = transcribe_audio(
-                                audio_file=io.BytesIO(upload.getvalue()),
+                                audio_file=io.BytesIO(audio_bytes),
                                 filename=upload.name or "audio.mp3",
                             )
                         except RuntimeError as e:

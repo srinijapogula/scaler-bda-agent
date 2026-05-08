@@ -184,14 +184,14 @@ def send_whatsapp_with_optional_pdf(
     note: str | None = None
 
     if not media_url and pdf_bytes:
-        media_dir = os.environ.get("TWILIO_PUBLIC_MEDIA_PATH", "").strip()
+        media_dir = os.environ.get("TWILIO_PUBLIC_MEDIA_PATH", "public_media").strip() or "public_media"
         base_url = os.environ.get("TWILIO_PUBLIC_MEDIA_URL", "").strip()
-        if media_dir and base_url:
-            path = Path(media_dir)
-            path.mkdir(parents=True, exist_ok=True)
-            fname = f"scaler-brief-{uuid.uuid4().hex}.pdf"
-            fpath = path / fname
-            fpath.write_bytes(pdf_bytes)
+        path = Path(media_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        fname = f"scaler-brief-{uuid.uuid4().hex}.pdf"
+        fpath = path / fname
+        fpath.write_bytes(pdf_bytes)
+        if base_url:
             media_url = base_url.rstrip("/") + "/" + fname
         else:
             note = "NO_PUBLIC_PDF_URL"
