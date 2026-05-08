@@ -1,10 +1,8 @@
-"""Send WhatsApp messages via Twilio with 0x0.st PDF upload."""
+"""Send WhatsApp messages via Twilio."""
 
 from __future__ import annotations
 
 import os
-import requests as req
-
 from dotenv import load_dotenv
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
@@ -96,62 +94,17 @@ def send_text_message(to_number: str, message: str) -> str:
     return str(msg.sid)
 
 
-def upload_to_public_url(pdf_path: str) -> str:
+def send_pdf_message(to_number: str, message: str, pdf_path: str) -> str:
     path = (pdf_path or "").strip()
     if not path:
         raise ValueError("pdf_path is empty.")
     if not os.path.isfile(path):
         raise FileNotFoundError(f"PDF file not found: {path}")
-    try:
-        with open(path, "rb") as f:
-            response = req.post(
-                "https://0x0.st",
-                files={"file": (os.path.basename(path), f, "application/pdf")},
-                timeout=30,
-            )
-    except req.RequestException as e:
-        raise RuntimeError(f"Upload failed: network error: {e}") from e
 
-    if 200 <= response.status_code < 300:
-        link = (response.text or "").strip().splitlines()[0].strip()
-        if link.startswith("http://") or link.startswith("https://"):
-            return link
-        raise RuntimeError(f"Upload failed: unexpected response body: {link!r}")
-    raise RuntimeError(f"Upload failed: HTTP {response.status_code}: {(response.text or '').strip()[:200]}")
-
-
-def _static_pdf_url(pdf_path: str) -> str | None:
-    base = (os.environ.get("STATIC_PUBLIC_BASE_URL", "") or "").strip().rstrip("/")
-    if not base:
-        return None
-    return f"{base}/{os.path.basename(pdf_path)}"
-
-
-def send_pdf_message(to_number: str, message: str, pdf_path: str) -> str:
-    body = (message or "").strip()
-    if not body:
-        raise ValueError("Message body is empty.")
-    try:
-        public_url = upload_to_public_url(pdf_path)
-    except Exception:
-        # Fallback to app-hosted static URL when available.
-        public_url = _static_pdf_url(pdf_path)
-        if not public_url:
-            fallback_body = f"{body}\n\nPDF upload failed. Please download from the app."
-            return send_text_message(to_number, fallback_body)
-
-    from_id = _get_whatsapp_from()
-    to_id = format_whatsapp_number(to_number)
-    client = _get_client()
-    try:
-        msg = client.messages.create(
-            from_=from_id,
-            to=to_id,
-            body=body,
-            media_url=[public_url],
-        )
-        return str(msg.sid)
-    except TwilioRestException:
-        # Fallback: deliver text with downloadable link.
-        fallback_body = f"{body}\n\nPDF: {public_url}"
-        return send_text_message(to_number, fallback_body)
+    # Manual-share flow: send text only, BDA shares the downloaded PDF manually.
+    manual_share_message = (
+        "Hi there, thanks for your time on the call today! I've put together answers to the questions you raised.\n\n"
+        "📄 Your personalized PDF is ready - your Scaler advisor will share it with you shortly.\n\n"
+        "Let me know if you'd like to chat more!"
+    )
+    return send_text_message(to_number, manual_share_message)

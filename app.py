@@ -229,6 +229,7 @@ def _init_session() -> None:
         "post_last_twilio_sid": None,
         "post_status_message": "",
         "post_pdf_attachment_missed": False,
+        "post_manual_share_ready": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -280,6 +281,7 @@ def _reset_post_flow(*, clear_transcript_widgets: bool = False) -> None:
     st.session_state["post_last_error"] = None
     st.session_state["post_status_message"] = ""
     st.session_state["post_pdf_attachment_missed"] = False
+    st.session_state["post_manual_share_ready"] = False
 
 
 def _copy_button(text: str, key: str) -> None:
@@ -660,10 +662,11 @@ def main() -> None:
                     if not pdf_path:
                         raise ValueError("PDF path missing. Regenerate the PDF and try again.")
                     sid = send_pdf_message(lead_wa, cover, str(pdf_path))
-                    st.session_state["post_status_message"] = f"WhatsApp sent with PDF. SID `{sid}`"
+                    st.session_state["post_status_message"] = f"WhatsApp message sent! SID `{sid}`"
                     st.session_state["post_last_twilio_sid"] = sid
                     st.session_state["post_awaiting_approval"] = False
-                    st.success("Approved and sent.")
+                    st.session_state["post_manual_share_ready"] = True
+                    st.success("WhatsApp message sent!")
                 except Exception as e:
                     st.error(str(e))
                     with st.expander("Error details"):
@@ -684,6 +687,21 @@ def main() -> None:
 
         if st.session_state.get("post_status_message"):
             st.info(st.session_state["post_status_message"])
+        if (
+            st.session_state.get("post_manual_share_ready")
+            and st.session_state.get("post_pdf_bytes")
+        ):
+            st.success("WhatsApp message sent!")
+            st.download_button(
+                "📥 Download PDF to share manually",
+                data=st.session_state["post_pdf_bytes"],
+                file_name="scaler-lead-brief.pdf",
+                mime="application/pdf",
+                key="dl_pdf_manual_share",
+                type="primary",
+                use_container_width=True,
+            )
+            st.caption("Download the PDF above and share it directly on WhatsApp")
 
 
 if __name__ == "__main__":
