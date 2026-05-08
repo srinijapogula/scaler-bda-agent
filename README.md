@@ -4,7 +4,7 @@ An AI-powered BDA assistant that generates pre-call WhatsApp nudges and post-cal
 
 ## One failure I found
 
-When leads ask hyper-specific curriculum questions (e.g. "which exact LLM framework versions do you cover?"), the agent occasionally generates plausible-sounding but unverifiable claims despite grounding instructions. A production fix would be RAG over scaler.com with automated re-indexing — the current static data file covers 80% of cases but misses edge cases.
+When leads ask hyper-specific curriculum questions (e.g. "which exact LLM framework versions do you cover?"), the agent occasionally generates plausible-sounding but unverifiable claims despite grounding instructions. A production fix would be RAG over scaler.com with automated re-indexing, the current static data file covers 80% of cases but misses edge cases.
 
 ## Scale plan
 
