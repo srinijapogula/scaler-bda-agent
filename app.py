@@ -19,9 +19,9 @@ from agents.audio_transcriber import transcribe_audio
 from agents.nudge_generator import generate_pre_sales_nudge
 from agents.pdf_content_generator import generate_pdf_content
 from agents.transcript_extractor import extract_transcript_insights
-from utils.pdf_renderer import render_pdf, static_pdf_url
+from utils.pdf_renderer import render_pdf
 from utils.scaler_data import get_facts_block, persona_ui_label_to_slug, template_for_persona_slug
-from utils.whatsapp import send_text_message, send_whatsapp_with_optional_pdf, test_twilio_auth
+from utils.whatsapp import send_pdf_message, send_text_message, test_twilio_auth
 
 load_dotenv(override=True)
 
@@ -656,34 +656,14 @@ def main() -> None:
                         st.error("Covering message is empty. Add text in **Covering WhatsApp message** above.")
                         st.stop()
                     pdf_path = st.session_state.get("post_pdf_path")
-                    fname = Path(pdf_path).name if pdf_path else None
-                    pdf_url = static_pdf_url(fname) if fname else None
                     st.session_state["post_pdf_attachment_missed"] = False
-                    result = send_whatsapp_with_optional_pdf(
-                        to_number=lead_wa,
-                        body=cover,
-                        pdf_url=pdf_url,
-                        pdf_path=pdf_path,
-                        pdf_bytes=st.session_state.get("post_pdf_bytes"),
-                    )
-                    sid = result["sid"]
-                    had_pdf = bool(result.get("had_attachment"))
-                    st.session_state["post_pdf_attachment_missed"] = not had_pdf
-                    if had_pdf:
-                        st.session_state["post_status_message"] = (
-                            f"WhatsApp sent with PDF. SID `{sid}`"
-                        )
-                    else:
-                        st.session_state["post_status_message"] = (
-                            f"WhatsApp sent (covering text only; PDF not attached). SID `{sid}`"
-                        )
+                    if not pdf_path:
+                        raise ValueError("PDF path missing. Regenerate the PDF and try again.")
+                    sid = send_pdf_message(lead_wa, cover, str(pdf_path))
+                    st.session_state["post_status_message"] = f"WhatsApp sent with PDF. SID `{sid}`"
                     st.session_state["post_last_twilio_sid"] = sid
                     st.session_state["post_awaiting_approval"] = False
-                    if st.session_state.get("post_pdf_attachment_missed"):
-                        st.success("Approved — WhatsApp message delivered.")
-                        st.warning(PDF_ATTACHMENT_SETUP)
-                    else:
-                        st.success("Approved and sent.")
+                    st.success("Approved and sent.")
                 except Exception as e:
                     st.error(str(e))
                     with st.expander("Error details"):
