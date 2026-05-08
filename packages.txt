@@ -1,5 +1,3 @@
-# Ubuntu packages for WeasyPrint on Render (Native Python + packages.txt)
-# https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#debian-ubuntu
 libpango-1.0-0
 libharfbuzz0b
 libpangoft2-1.0-0
