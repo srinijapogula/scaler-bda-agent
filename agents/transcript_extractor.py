@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from typing import Any
 
 from anthropic import APIConnectionError, APIError, Anthropic
@@ -143,22 +144,42 @@ def extract_transcript_insights(
         f"{text}\n"
     )
 
-    try:
-        client = _client()
-        message = client.messages.create(
-            model=MODEL,
-            max_tokens=4096,
-            temperature=0.2,
-            system=_SYSTEM,
-            messages=[{"role": "user", "content": user}],
-        )
-    except AnthropicNotFoundError as e:
-        raise RuntimeError(
-            f"Anthropic model not found: `{MODEL}`. "
-            "Set `ANTHROPIC_MODEL` in `.env` to a model available for your API key."
-        ) from e
-    except (APIConnectionError, AnthropicRateLimitError, APIError) as e:
-        raise RuntimeError(f"Anthropic API error while extracting transcript insights: {e}") from e
+    client = _client()
+    max_attempts = 4
+    message = None
+    last_err: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            message = client.messages.create(
+                model=MODEL,
+                max_tokens=4096,
+                temperature=0.2,
+                system=_SYSTEM,
+                messages=[{"role": "user", "content": user}],
+            )
+            break
+        except AnthropicNotFoundError as e:
+            raise RuntimeError(
+                f"Anthropic model not found: `{MODEL}`. "
+                "Set `ANTHROPIC_MODEL` in `.env` to a model available for your API key."
+            ) from e
+        except (APIConnectionError, AnthropicRateLimitError, APIError) as e:
+            last_err = e
+            msg = str(e).lower()
+            is_retryable = (
+                "overloaded_error" in msg
+                or "overloaded" in msg
+                or "error code: 529" in msg
+                or "529" in msg
+                or isinstance(e, (APIConnectionError, AnthropicRateLimitError))
+            )
+            if not is_retryable or attempt >= max_attempts:
+                break
+            # Exponential backoff for transient Anthropic saturation/network limits.
+            time.sleep(min(8, 1.5 * (2 ** (attempt - 1))))
+
+    if message is None:
+        raise RuntimeError(f"Anthropic API error while extracting transcript insights: {last_err}") from last_err
 
     raw = message.content[0].text.strip() if message.content else ""
     if not raw:
