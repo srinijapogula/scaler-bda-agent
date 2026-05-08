@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Brief - {{ name | e }}</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    html, body { margin: 0; padding: 0; font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.52; color: #134e4a; background: #fef9ef; }
+    .banner { background: #0d9488; color: #ffffff; padding: 12px 14px; margin-bottom: 12px; }
+    .banner-logo { font-weight: 800; font-size: 13pt; letter-spacing: 0.18em; }
+    .banner-sub { font-size: 9pt; margin-top: 6px; opacity: 0.95; }
+    .accent-bar { height: 3px; width: 64px; background: #f97066; margin-top: 10px; }
+    .hello { background: #fff; border: 2px solid #99f6e4; padding: 10px 12px; margin-bottom: 12px; }
+    .h2 { font-weight: 800; font-size: 12pt; color: #0d9488; margin: 14px 0 8px 0; }
+    .card { background: #fff; border-left: 4px solid #f97066; padding: 10px 12px; margin-bottom: 8px; }
+    .card h3 { margin: 0 0 6px 0; font-size: 10pt; color: #0f766e; font-weight: 800; }
+    .card-body { font-size: 10pt; color: #115e59; }
+    .emi { border: 2px dashed #0d9488; padding: 10px 12px; margin: 12px 0; background: #ecfdf5; font-size: 9.5pt; }
+    .story { padding: 8px 10px; margin-bottom: 6px; background: #fff; border: 1px solid #e2e8f0; font-size: 9.5pt; }
+    .entrance { background: #134e4a; color: #ecfdf5; padding: 10px 12px; margin: 12px 0; font-size: 10pt; }
+    .entrance h3 { margin: 0 0 8px 0; color: #99f6e4; font-size: 11pt; }
+    .cta { background: #f97066; color: #ffffff; padding: 12px; text-align: center; font-weight: 800; font-size: 10.5pt; margin-top: 10px; }
+    .footer { margin-top: 14px; padding-top: 10px; border-top: 2px solid #99f6e4; font-size: 8.5pt; color: #0f766e; text-align: center; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td class="banner">
+        <span class="banner-logo">SCALER</span>
+        <div class="accent-bar"></div>
+        <div class="banner-sub">You belong here.</div>
+      </td>
+    </tr>
+    <tr>
+      <td><div class="hello">{{ greeting | e }}</div></td>
+    </tr>
+    <tr>
+      <td><div class="h2">Plain answers for you</div></td>
+    </tr>
+    <tr>
+      <td>
+        {% for sec in sections %}
+        <div class="card">
+          <h3>{{ sec.heading | e }}</h3>
+          <div class="card-body">{{ sec.body_html | safe }}</div>
+        </div>
+        {% endfor %}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <table class="emi" width="100%" border="0" cellspacing="0" cellpadding="8">
+          <tr>
+            <td colspan="2"><strong>Fees &amp; EMI (ask admissions for yours)</strong></td>
+          </tr>
+          <tr>
+            <td width="50%" valign="top">Fees are significant. Plan EMI and options with admissions so you see real numbers.</td>
+            <td width="50%" valign="top">Example reference only: roughly Rs. 3.5L program fee cited in admissions materials; tenure and EMI depend on partner and cohort.</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="h2">Others who started similarly</div>
+        <div class="story">Stories are illustrative only. Admissions can walk through cohort fit with you honestly.</div>
+        <div class="story">We map financing and pace with families when that is the blocker.</div>
+        <div class="story">The entrance check is commitment and aptitude based. Ask admissions for preparation notes for your cohort.</div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="entrance">
+          <h3>Entrance test - what we tell people</h3>
+          It is needed for admissions. Ask your BDA what format and prep look like today. Failed once does not mean you are unwelcome forever; verify rules on your next call.
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td><div class="cta">{{ cta_text | e }}</div></td>
+    </tr>
+    <tr>
+      <td class="footer">Prepared for {{ name | e }} | {{ date | e }} | Scaler Academy<br />One honest conversation at a time.</td>
+    </tr>
+  </table>
+</body>
+</html>

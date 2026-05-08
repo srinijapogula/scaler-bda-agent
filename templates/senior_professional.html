@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Brief - {{ name | e }}</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    html, body { margin: 0; padding: 0; font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 10.5pt; line-height: 1.48; color: #2d3436; background: #f8f8f5; }
+    .sheet { padding: 0; background: #f8f8f5; }
+    .hdr { border-bottom: 1px solid #b8860b; padding-bottom: 10px; margin-bottom: 12px; }
+    .brand { font-family: Arial, Helvetica, sans-serif; font-weight: 700; font-size: 12pt; letter-spacing: 0.25em; color: #2d3436; }
+    .meta { font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; color: #636e72; text-transform: uppercase; letter-spacing: 0.04em; text-align: right; }
+    .note { background: #fff; border-left: 3px solid #b8860b; padding: 10px 12px; margin-bottom: 12px; }
+    .h2 { font-family: Arial, Helvetica, sans-serif; font-weight: 700; font-size: 11pt; color: #2d3436; margin: 16px 0 8px 0; }
+    .qa { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .qa th, .qa td { border-bottom: 1px solid #dfe0d8; padding: 8px 10px 8px 0; vertical-align: top; text-align: left; }
+    .qa th { width: 30%; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; font-weight: 700; color: #b8860b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .qa td.body { font-size: 10.5pt; color: #2d3436; }
+    .cur { width: 100%; border-collapse: collapse; font-size: 9.5pt; background: #fff; margin-top: 8px; }
+    .cur th { text-align: left; padding: 8px 10px; background: #2d3436; color: #f5f5f0; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; letter-spacing: 0.03em; text-transform: uppercase; }
+    .cur td { padding: 8px 10px; border-bottom: 1px solid #dfe0d8; vertical-align: top; }
+    .dense { padding: 10px 12px; background: #fff; border: 1px solid #dfe0d8; font-size: 9.5pt; margin-top: 10px; }
+    .dense h3 { font-family: Arial, Helvetica, sans-serif; font-weight: 700; font-size: 8pt; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.05em; color: #2d3436; }
+    .cta-line { margin-top: 14px; padding-top: 10px; border-top: 2px solid #b8860b; font-size: 10.5pt; font-weight: 600; font-family: Arial, Helvetica, sans-serif; color: #2d3436; }
+    .foot { margin-top: 16px; font-size: 7.5pt; color: #636e72; }
+    .gold { color: #b8860b; font-weight: 700; font-family: Arial, Helvetica, sans-serif; }
+  </style>
+</head>
+<body>
+  <table class="sheet" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td>
+        <table class="hdr" width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td><span class="brand">SCALER</span></td>
+            <td class="meta">Technical brief</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="note">{{ greeting | e }}</td>
+    </tr>
+    <tr>
+      <td><div class="h2">Straight answers</div></td>
+    </tr>
+    <tr>
+      <td>
+        <table class="qa" width="100%" border="0" cellspacing="0" cellpadding="0">
+          {% for sec in sections %}
+          <tr>
+            <th>{{ sec.heading | e }}</th>
+            <td class="body">{{ sec.body_html | safe }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td><div class="h2">Curriculum highlights (reference only)</div></td>
+    </tr>
+    <tr>
+      <td>
+        <table class="cur" width="100%" border="0" cellspacing="0" cellpadding="0">
+          <thead><tr><th width="26%">Focus</th><th>Hands-on expectation</th></tr></thead>
+          <tbody>
+            <tr><td>DSA</td><td>Interview-grade patterns grounded in verified track structure.</td></tr>
+            <tr><td>System design</td><td>Trade-offs and reliability, not slides only.</td></tr>
+            <tr><td>Full stack</td><td>End-to-end product surfaces with API discipline.</td></tr>
+            <tr><td>Applied AI topics</td><td>Topics available per verified program data; specifics on next call.</td></tr>
+            <tr><td>Delivery</td><td>Projects, cases, structured practice milestones.</td></tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="dense">
+          <h3>Instructors &amp; mentorship</h3>
+          <p style="margin:0;">Industry-led sessions and mentor support vary by cohort. Happy to share specifics on your next call.</p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td><div class="cta-line">{{ cta_text | e }}</div></td>
+    </tr>
+    <tr>
+      <td class="foot"><span class="gold">SCALER</span> - Prepared for {{ name | e }} - {{ date | e }}</td>
+    </tr>
+  </table>
+</body>
+</html>

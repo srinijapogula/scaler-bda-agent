@@ -1,0 +1,11 @@
+# Direct dependencies — pip resolves the WeasyPrint/Cairo stack.
+# Linux/Render: add Apt packages via packages.txt (see Render docs for Native Environments).
+
+streamlit>=1.28.0,<2
+anthropic>=0.39.0
+openai>=1.55.0
+weasyprint>=62.0
+twilio>=9.0.0
+python-dotenv>=1.0.0
+jinja2>=3.1.0
+reportlab>=4.0.0
