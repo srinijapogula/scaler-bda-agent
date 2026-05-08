@@ -102,22 +102,43 @@ def upload_to_public_url(pdf_path: str) -> str:
         raise ValueError("pdf_path is empty.")
     if not os.path.isfile(path):
         raise FileNotFoundError(f"PDF file not found: {path}")
-    with open(path, "rb") as f:
-        response = req.post(
-            "https://0x0.st",
-            files={"file": (os.path.basename(path), f, "application/pdf")},
-            timeout=30,
-        )
-    if response.status_code == 200:
-        return response.text.strip()
-    raise RuntimeError("Upload failed")
+    try:
+        with open(path, "rb") as f:
+            response = req.post(
+                "https://0x0.st",
+                files={"file": (os.path.basename(path), f, "application/pdf")},
+                timeout=30,
+            )
+    except req.RequestException as e:
+        raise RuntimeError(f"Upload failed: network error: {e}") from e
+
+    if 200 <= response.status_code < 300:
+        link = (response.text or "").strip().splitlines()[0].strip()
+        if link.startswith("http://") or link.startswith("https://"):
+            return link
+        raise RuntimeError(f"Upload failed: unexpected response body: {link!r}")
+    raise RuntimeError(f"Upload failed: HTTP {response.status_code}: {(response.text or '').strip()[:200]}")
+
+
+def _static_pdf_url(pdf_path: str) -> str | None:
+    base = (os.environ.get("STATIC_PUBLIC_BASE_URL", "") or "").strip().rstrip("/")
+    if not base:
+        return None
+    return f"{base}/{os.path.basename(pdf_path)}"
 
 
 def send_pdf_message(to_number: str, message: str, pdf_path: str) -> str:
     body = (message or "").strip()
     if not body:
         raise ValueError("Message body is empty.")
-    public_url = upload_to_public_url(pdf_path)
+    try:
+        public_url = upload_to_public_url(pdf_path)
+    except Exception:
+        # Fallback to app-hosted static URL when available.
+        public_url = _static_pdf_url(pdf_path)
+        if not public_url:
+            fallback_body = f"{body}\n\nPDF upload failed. Please download from the app."
+            return send_text_message(to_number, fallback_body)
 
     from_id = _get_whatsapp_from()
     to_id = format_whatsapp_number(to_number)
