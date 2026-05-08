@@ -448,6 +448,12 @@ def main() -> None:
         ):
             _set_preset("post", "meera", include_transcript=True)
 
+        forced_post_mode = (st.session_state.get("post_input_mode_force") or "").strip()
+        if forced_post_mode:
+            st.session_state["post_input_mode_force"] = ""
+            st.session_state["post_input_mode"] = forced_post_mode
+            st.rerun()
+
         post_mode = st.radio(
             "Input",
             ["Text Transcript", "Audio Upload"],
@@ -502,7 +508,7 @@ def main() -> None:
                             )
                         except RuntimeError as e:
                             if "insufficient_quota" in str(e) or "quota" in str(e).lower():
-                                st.session_state["post_input_mode"] = "Text Transcript"
+                                st.session_state["post_input_mode_force"] = "Text Transcript"
                                 raise ValueError(
                                     "Whisper transcription failed due to OpenAI quota/billing. "
                                     "Switching to Text Transcript — please paste the transcript and try again."
